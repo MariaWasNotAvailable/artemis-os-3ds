@@ -6,6 +6,23 @@ ifeq ($(strip $(DEVKITARM)),)
 $(error "Please set DEVKITARM in your environment. export DEVKITARM=<path to>devkitARM")
 endif
 
+# Normalize Windows drive paths so make never sees a bare "C:..." (which it
+# reads as target:prereq and breaks included .d files). Safe on Unix too.
+_bs2fs = $(subst \,/,$(1))
+_winpath = $(if $(findstring :,$(call _bs2fs,$(1))),\
+  $(if $(findstring :/,$(call _bs2fs,$(1))),$(call _bs2fs,$(1)),$(word 1,$(subst :, ,$(call _bs2fs,$(1)))):/$(word 2,$(subst :, ,$(call _bs2fs,$(1))))),\
+  $(call _bs2fs,$(1)))
+DEVKITARM   := $(strip $(call _winpath,$(DEVKITARM)))
+DEVKITPRO   := $(strip $(call _winpath,$(DEVKITPRO)))
+CTRULIB     := $(strip $(call _winpath,$(CTRULIB)))
+
+ifeq ($(strip $(DEVKITPRO)),)
+  export DEVKITPRO := $(DEVKITARM)/../..
+endif
+ifeq ($(strip $(CTRULIB)),)
+  export CTRULIB := $(DEVKITPRO)/libctru
+endif
+
 TOPDIR ?= $(CURDIR)
 include $(DEVKITARM)/3ds_rules
 
