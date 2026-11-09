@@ -5,7 +5,8 @@
 #include <string.h>
 
 typedef struct {
-    char text[2048];
+    char *text;
+    int  text_cap;
     int  text_len;
 } NotepadState;
 
@@ -68,7 +69,7 @@ static void notepad_putc(Window *w, char c) {
         }
         return;
     }
-    if (s->text_len < (int)sizeof(s->text) - 1) {
+    if (s->text_len < s->text_cap - 1) {
         s->text[s->text_len++] = c;
         s->text[s->text_len]   = '\0';
     }
@@ -197,7 +198,7 @@ static void draw_notepad_body(uint8_t *fb, Window *w, int is_focused) {
 static int notepad_load_file(Window *w, const char *fname) {
     NotepadState *s = (NotepadState *)w->app_state;
     int n = 0;
-    if (!note_text_load(fname, s->text, (int)sizeof(s->text), &n)) return 0;
+    if (!note_text_load(fname, s->text, s->text_cap, &n)) return 0;
     s->text_len = n;
     strncpy(w->filename, fname, FNAME_MAX - 1);
     w->filename[FNAME_MAX - 1] = '\0';
@@ -215,13 +216,21 @@ static void notepad_reset(Window *w) {
     strcpy(w->title, "Notes");
     w->app_state = &g_notepad_state;
     NotepadState *s = (NotepadState *)w->app_state;
+    if (s->text) linearFree(s->text);
+    /* New 3DS gets a bigger text buffer (more RAM); original stays small. */
+    s->text_cap = is_new3ds() ? 4096 : 2048;
+    s->text = (char *)linearAlloc(s->text_cap);
+    if (!s->text) {
+        s->text_cap = 0;
+        s->text_len = 0;
+        return;
+    }
     s->text[0] = '\0';
     s->text_len = 0;
     strcpy(w->filename, "untitled.txt");
     w->focus_filename = 0;
     w->status[0] = '\0';
     w->status_ttl = 0;
-    w->app_state = &g_notepad_state;
     bring_to_front(WK_NOTEPAD);
 }
 

@@ -1,10 +1,10 @@
 #include "audio.h"
+#include "core.h"
 
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
 
-#define SFX_RATE      32000
 #define SFX_CHANNELS  4
 #define SFX_CHANNEL0  0
 
@@ -17,13 +17,14 @@ static SfxClip     g_sfx[SFX_COUNT];
 static ndspWaveBuf g_sfx_wb[SFX_CHANNELS];
 static int         g_sfx_next_ch = 0;
 static int         g_audio_ready = 0;
+static int         g_sfx_rate = 32000;   /* 32000 on old 3DS, 48000 on New 3DS */
 static char        g_audio_status[64] = "not init";
 
 static void sfx_tone(int16_t *out, int nsamples, int offset,
                      double freq, double amp, int wave) {
     double two_pi = 6.28318530717958647692;
     for (int i = 0; i < nsamples; i++) {
-        double t = (double)i / (double)SFX_RATE;
+        double t = (double)i / (double)g_sfx_rate;
         double env;
 
         double attack = 0.005;
@@ -46,7 +47,7 @@ static void sfx_tone(int16_t *out, int nsamples, int offset,
 
 static int16_t *sfx_build_sweep(const double *notes, int count, int per_ms,
                                 double amp, int wave, int *out_n) {
-    int per_samples = (SFX_RATE * per_ms) / 1000;
+    int per_samples = (g_sfx_rate * per_ms) / 1000;
     int total = per_samples * count;
     int16_t *buf = (int16_t *)linearAlloc(total * sizeof(int16_t));
     if (!buf) { *out_n = 0; return NULL; }
@@ -59,7 +60,7 @@ static int16_t *sfx_build_sweep(const double *notes, int count, int per_ms,
 }
 
 static int16_t *sfx_build_blip(double freq, int ms, double amp, int wave, int *out_n) {
-    int n = (SFX_RATE * ms) / 1000;
+    int n = (g_sfx_rate * ms) / 1000;
     int16_t *buf = (int16_t *)linearAlloc(n * sizeof(int16_t));
     if (!buf) { *out_n = 0; return NULL; }
     memset(buf, 0, n * sizeof(int16_t));
@@ -70,7 +71,7 @@ static int16_t *sfx_build_blip(double freq, int ms, double amp, int wave, int *o
 
 static int16_t *sfx_build_chord(const double *notes, int count, int ms,
                                 double amp, int wave, int *out_n) {
-    int n = (SFX_RATE * ms) / 1000;
+    int n = (g_sfx_rate * ms) / 1000;
     int16_t *buf = (int16_t *)linearAlloc(n * sizeof(int16_t));
     if (!buf) { *out_n = 0; return NULL; }
     memset(buf, 0, n * sizeof(int16_t));
@@ -138,6 +139,8 @@ void sfx_init(void) {
     memset(g_sfx, 0, sizeof(g_sfx));
     memset(g_sfx_wb, 0, sizeof(g_sfx_wb));
 
+    g_sfx_rate = is_new3ds() ? 48000 : 32000;
+
     Result rc = ndspInit();
     if (R_FAILED(rc)) {
         snprintf(g_audio_status, sizeof(g_audio_status),
@@ -155,7 +158,7 @@ void sfx_init(void) {
         int ch = SFX_CHANNEL0 + i;
         ndspChnReset(ch);
         ndspChnSetInterp(ch, NDSP_INTERP_LINEAR);
-        ndspChnSetRate(ch, (float)SFX_RATE);
+        ndspChnSetRate(ch, (float)g_sfx_rate);
         ndspChnSetFormat(ch, NDSP_FORMAT_MONO_PCM16);
         ndspChnSetMix(ch, mix);
     }

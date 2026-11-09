@@ -488,6 +488,7 @@ static void do_click(int mx, int my) {
 int main(void) {
     gfxInitDefault();
     ptmuInit();
+    detect_model();
     sfx_init();
     ensure_artemis_dir();
 

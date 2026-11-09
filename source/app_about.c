@@ -28,9 +28,11 @@ static void about_reset(Window *w) {
         "A tiny Windows-like\n"
         "shell for the 3DS.\n"
         "\n"
+        "Model: %s\n"
         "Audio: %s\n"
         "Saves: sdmc:/3ds/artemis/",
         BUILD_NUMBER,
+        is_new3ds() ? "New 3DS / New 2DS" : "Original 3DS / 2DS",
         sfx_status());
     s->text_len = (int)strlen(s->text);
     if (s->text_len > (int)sizeof(s->text) - 1)

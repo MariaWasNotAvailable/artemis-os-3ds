@@ -6,18 +6,22 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define PAINT_CW   192
-#define PAINT_CH   128
-#define PAINT_BYTES (PAINT_CW * PAINT_CH / 2)
+#define PAINT_CW_OLD  192
+#define PAINT_CH_OLD  128
+#define PAINT_CW_NEW  256
+#define PAINT_CH_NEW  144
 
 typedef struct {
-    uint8_t paint_px[PAINT_BYTES];
-    int  paint_tool;
-    int  paint_color;
-    int  paint_last_x;
-    int  paint_last_y;
-    int  paint_line_sx;
-    int  paint_line_sy;
+    uint8_t *paint_px;
+    int      paint_cw;
+    int      paint_ch;
+    int      paint_bytes;
+    int      paint_tool;
+    int      paint_color;
+    int      paint_last_x;
+    int      paint_last_y;
+    int      paint_line_sx;
+    int      paint_line_sy;
 } PaintState;
 
 static PaintState g_paint_state;
@@ -50,9 +54,9 @@ static const Color PAINT_PAL[16] = {
 
 static inline void paint_set(Window *w, int x, int y, int col) {
     PaintState *s = (PaintState *)w->app_state;
-    if ((unsigned)x >= (unsigned)PAINT_CW) return;
-    if ((unsigned)y >= (unsigned)PAINT_CH) return;
-    int idx = y * PAINT_CW + x;
+    if ((unsigned)x >= (unsigned)s->paint_cw) return;
+    if ((unsigned)y >= (unsigned)s->paint_ch) return;
+    int idx = y * s->paint_cw + x;
     int byte = idx / 2;
     uint8_t b = s->paint_px[byte];
     if (idx & 1) b = (uint8_t)((b & 0x0F) | ((col & 0x0F) << 4));
@@ -62,9 +66,9 @@ static inline void paint_set(Window *w, int x, int y, int col) {
 
 static inline int paint_get(Window *w, int x, int y) {
     PaintState *s = (PaintState *)w->app_state;
-    if ((unsigned)x >= (unsigned)PAINT_CW) return 0;
-    if ((unsigned)y >= (unsigned)PAINT_CH) return 0;
-    int idx = y * PAINT_CW + x;
+    if ((unsigned)x >= (unsigned)s->paint_cw) return 0;
+    if ((unsigned)y >= (unsigned)s->paint_ch) return 0;
+    int idx = y * s->paint_cw + x;
     uint8_t b = s->paint_px[idx / 2];
     return (idx & 1) ? (b >> 4) : (b & 0x0F);
 }
@@ -72,7 +76,7 @@ static inline int paint_get(Window *w, int x, int y) {
 static void paint_fill_all(Window *w, int col) {
     PaintState *s = (PaintState *)w->app_state;
     uint8_t v = (uint8_t)((col & 0x0F) | ((col & 0x0F) << 4));
-    memset(s->paint_px, v, PAINT_BYTES);
+    memset(s->paint_px, v, s->paint_bytes);
 }
 
 static void paint_brush(Window *w, int x, int y, int radius, int col) {
@@ -101,42 +105,46 @@ static void paint_line(Window *w, int x0, int y0, int x1, int y1,
 }
 
 static void paint_flood(Window *w, int sx, int sy, int new_col) {
+    PaintState *s = (PaintState *)w->app_state;
     int old = paint_get(w, sx, sy);
     if (old == new_col) return;
 
-    static int stack[PAINT_CW * PAINT_CH];
+    int total = s->paint_cw * s->paint_ch;
+    int *stack = (int *)linearAlloc(total * sizeof(int));
+    if (!stack) return;
     int sp = 0;
-    stack[sp++] = sy * PAINT_CW + sx;
+    stack[sp++] = sy * s->paint_cw + sx;
     while (sp > 0) {
         int p = stack[--sp];
-        int x = p % PAINT_CW;
-        int y = p / PAINT_CW;
-        if (x < 0 || x >= PAINT_CW || y < 0 || y >= PAINT_CH) continue;
+        int x = p % s->paint_cw;
+        int y = p / s->paint_cw;
+        if (x < 0 || x >= s->paint_cw || y < 0 || y >= s->paint_ch) continue;
         if (paint_get(w, x, y) != old) continue;
 
         int lx = x;
         while (lx > 0 && paint_get(w, lx - 1, y) == old) lx--;
         int rx = x;
-        while (rx < PAINT_CW - 1 && paint_get(w, rx + 1, y) == old) rx++;
+        while (rx < s->paint_cw - 1 && paint_get(w, rx + 1, y) == old) rx++;
         for (int i = lx; i <= rx; i++) paint_set(w, i, y, new_col);
 
         if (y > 0) {
             for (int i = lx; i <= rx; i++) {
                 if (paint_get(w, i, y - 1) == old) {
-                    if (sp < (int)(sizeof(stack) / sizeof(stack[0])))
-                        stack[sp++] = (y - 1) * PAINT_CW + i;
+                    if (sp < total)
+                        stack[sp++] = (y - 1) * s->paint_cw + i;
                 }
             }
         }
-        if (y < PAINT_CH - 1) {
+        if (y < s->paint_ch - 1) {
             for (int i = lx; i <= rx; i++) {
                 if (paint_get(w, i, y + 1) == old) {
-                    if (sp < (int)(sizeof(stack) / sizeof(stack[0])))
-                        stack[sp++] = (y + 1) * PAINT_CW + i;
+                    if (sp < total)
+                        stack[sp++] = (y + 1) * s->paint_cw + i;
                 }
             }
         }
     }
+    linearFree(stack);
 }
 
 /*---------------------------------------------------------------------
@@ -150,7 +158,7 @@ static int paint_save(Window *w) {
     FILE *f = fopen(path, "wb");
     if (!f) return 0;
     const char magic[4] = { 'A', 'P', 'T', '1' };
-    uint16_t cw = PAINT_CW, ch = PAINT_CH;
+    uint16_t cw = s->paint_cw, ch = s->paint_ch;
     uint8_t pal[16 * 3];
     for (int i = 0; i < 16; i++) {
         pal[i * 3 + 0] = PAINT_PAL[i].r;
@@ -162,7 +170,7 @@ static int paint_save(Window *w) {
     ok = ok && fwrite(&cw,          1, 2,           f) == 2;
     ok = ok && fwrite(&ch,          1, 2,           f) == 2;
     ok = ok && fwrite(pal,          1, sizeof(pal), f) == sizeof(pal);
-    ok = ok && fwrite(s->paint_px,  1, PAINT_BYTES, f) == PAINT_BYTES;
+    ok = ok && fwrite(s->paint_px,  1, s->paint_bytes, f) == s->paint_bytes;
     fclose(f);
     return ok;
 }
@@ -182,9 +190,9 @@ static int paint_load_internal(Window *w, const char *fname) {
     ok = ok && fread(&ch,   1, 2,           f) == 2;
     ok = ok && fread(pal,   1, sizeof(pal), f) == sizeof(pal);
     ok = ok && memcmp(magic, "APT1", 4) == 0;
-    ok = ok && cw == PAINT_CW && ch == PAINT_CH;
+    ok = ok && cw == s->paint_cw && ch == s->paint_ch;
     if (ok) {
-        if (fread(s->paint_px, 1, PAINT_BYTES, f) != PAINT_BYTES) ok = 0;
+        if (fread(s->paint_px, 1, s->paint_bytes, f) != s->paint_bytes) ok = 0;
     }
     fclose(f);
     return ok;
@@ -260,6 +268,7 @@ typedef struct {
 } PaintLayout;
 
 static void paint_layout(Window *w, PaintLayout *L) {
+    PaintState *s = (PaintState *)w->app_state;
     L->tb_x = w->x + 5;
     L->tb_y = w->y + 20;
     L->tb_w = w->w - 10;
@@ -277,18 +286,18 @@ static void paint_layout(Window *w, PaintLayout *L) {
     L->tc_x = w->x + 5;
     L->tc_y = L->tb_y + L->tb_h + 2;
     L->tc_w = col_w;
-    L->tc_h = PAINT_CH;
+    L->tc_h = s->paint_ch;
 
     L->tc_btn_h = L->tc_h / (PAINT_NUM_TOOLS + 1);
 
     L->cv_x = L->tc_x + L->tc_w + 2;
     L->cv_y = L->tc_y;
-    L->cv_w = PAINT_CW;
-    L->cv_h = PAINT_CH;
+    L->cv_w = s->paint_cw;
+    L->cv_h = s->paint_ch;
 
     L->pl_x = L->cv_x;
     L->pl_y = L->cv_y + L->cv_h + 2;
-    L->pl_w = PAINT_CW;
+    L->pl_w = s->paint_cw;
     L->pl_h = 10;
     L->pl_sw = L->pl_w / 16;
 }
@@ -297,13 +306,14 @@ static void paint_layout(Window *w, PaintLayout *L) {
  * Top screen drawing
  *-------------------------------------------------------------------*/
 static void draw_paint_canvas(uint8_t *fb, Window *w, int px, int py) {
-    for (int y = 0; y < PAINT_CH; y++) {
-        for (int x = 0; x < PAINT_CW; x++) {
+    PaintState *s = (PaintState *)w->app_state;
+    for (int y = 0; y < s->paint_ch; y++) {
+        for (int x = 0; x < s->paint_cw; x++) {
             int c = paint_get(w, x, y);
             put_px(fb, TOP_W, TOP_H, px + x, py + y, PAINT_PAL[c]);
         }
     }
-    bevel(fb, TOP_W, TOP_H, px - 1, py - 1, PAINT_CW + 2, PAINT_CH + 2, 0);
+    bevel(fb, TOP_W, TOP_H, px - 1, py - 1, s->paint_cw + 2, s->paint_ch + 2, 0);
 }
 
 static void draw_paint_body(uint8_t *fb, Window *w, int is_focused) {
@@ -523,10 +533,10 @@ typedef struct {
 } PaintBotLayout;
 
 static void paint_bot_layout(PaintBotLayout *L) {
-    L->cv_x = (BOT_W - PAINT_CW) / 2;
+    L->cv_x = (BOT_W - g_paint_state.paint_cw) / 2;
     L->cv_y = 0;
-    L->cv_w = PAINT_CW;
-    L->cv_h = PAINT_CH;
+    L->cv_w = g_paint_state.paint_cw;
+    L->cv_h = g_paint_state.paint_ch;
 
     L->tr_y = L->cv_y + L->cv_h + 4;
     L->tr_h = 24;
@@ -608,13 +618,13 @@ void draw_paint_bottom(uint8_t *bot, Window *w) {
 
     fill_rect(bot, BOT_W, BOT_H, 0, 0, BOT_W, BOT_H, C_TASKBAR);
 
-    for (int y = 0; y < PAINT_CH; y++) {
-        for (int x = 0; x < PAINT_CW; x++) {
+    for (int y = 0; y < s->paint_ch; y++) {
+        for (int x = 0; x < s->paint_cw; x++) {
             int c = paint_get(w, x, y);
             put_px(bot, BOT_W, BOT_H, L.cv_x + x, L.cv_y + y, PAINT_PAL[c]);
         }
     }
-    bevel(bot, BOT_W, BOT_H, L.cv_x - 1, L.cv_y, L.cv_w + 2, L.cv_h + 1, 0);
+    bevel(bot, BOT_W, BOT_H, L.cv_x - 1, L.cv_y, s->paint_cw + 2, s->paint_ch + 1, 0);
 
     for (int i = 0; i < PAINT_NUM_TOOLS + 1; i++) {
         int bx = L.tr_x + i * (L.tb_sz + L.tb_gap);
@@ -711,8 +721,11 @@ void paint_bottom_touch(int tx, int ty, int touching, int prev_touching) {
             paint_bot_layout(&L);
             int cx = tx - L.cv_x;
             int cy = ty - L.cv_y;
-            if (cx >= 0 && cx < PAINT_CW && cy >= 0 && cy < PAINT_CH) {
-                paint_stroke(pw, cx, cy, 0);
+            {
+                PaintState *s = (PaintState *)pw->app_state;
+                if (cx >= 0 && cx < s->paint_cw && cy >= 0 && cy < s->paint_ch) {
+                    paint_stroke(pw, cx, cy, 0);
+                }
             }
         }
     } else if (!touching && prev_touching) {
@@ -762,7 +775,16 @@ static void paint_reset(Window *w) {
     w->kind = WK_PAINT;
     w->open = 1;
     w->x = 30;  w->y = 10;
-    w->w = 228; w->h = 200;
+    /* New 3DS gets a bigger canvas (more RAM); original keeps the small one. */
+    if (is_new3ds()) {
+        w->w = 300; w->h = 200;
+        g_paint_state.paint_cw = PAINT_CW_NEW;
+        g_paint_state.paint_ch = PAINT_CH_NEW;
+    } else {
+        w->w = 228; w->h = 200;
+        g_paint_state.paint_cw = PAINT_CW_OLD;
+        g_paint_state.paint_ch = PAINT_CH_OLD;
+    }
     strcpy(w->title, "Paint");
     strcpy(w->filename, "untitled.apt");
     w->focus_filename = 0;
@@ -770,6 +792,13 @@ static void paint_reset(Window *w) {
     w->status_ttl = 0;
     w->app_state = &g_paint_state;
     PaintState *s = (PaintState *)w->app_state;
+    if (s->paint_px) linearFree(s->paint_px);
+    s->paint_bytes = s->paint_cw * s->paint_ch / 2;
+    s->paint_px = (uint8_t *)linearAlloc(s->paint_bytes);
+    if (!s->paint_px) {
+        s->paint_bytes = 0;
+        return;
+    }
     s->paint_tool   = 0;
     s->paint_color  = 1;
     s->paint_last_x = -1;

@@ -26,6 +26,13 @@
 #define FNAME_MAX   28
 
 /*---------------------------------------------------------------------
+ * Console model detection (original 3DS/2DS vs New 3DS/New 2DS)
+ *-------------------------------------------------------------------*/
+extern int g_is_new3ds;   /* 1 when running on a New 3DS / New 2DS */
+void detect_model(void);  /* queries APT_GetModel at startup       */
+int  is_new3ds(void);     /* accessor                              */
+
+/*---------------------------------------------------------------------
  * Colors
  *-------------------------------------------------------------------*/
 typedef struct { uint8_t r, g, b; } Color;

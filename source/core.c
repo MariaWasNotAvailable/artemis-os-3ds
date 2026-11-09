@@ -8,6 +8,8 @@
 #include <errno.h>
 #include <time.h>
 
+#include <3ds/services/cfgu.h>
+
 #include "font8x8.h"
 #include "buildinfo.h"
 
@@ -172,6 +174,21 @@ Window g_wins[NUM_WINS];
 int    g_z[NUM_WINS] = {WK_ABOUT, WK_FILES, WK_CALC, WK_MINES, WK_PAINT, WK_NOTEPAD};
 
 int g_uptime_ticks = 0;
+int g_is_new3ds = 0;
+
+void detect_model(void) {
+    u8 model = 0;
+    cfguInit();
+    if (R_SUCCEEDED(CFGU_GetSystemModel(&model))) {
+        /* CFG_MODEL_N3DS(2), N3DSXL(4), N2DSXL(5) → New; rest → old */
+        g_is_new3ds = (model == CFG_MODEL_N3DS || model == CFG_MODEL_N3DSXL || model == CFG_MODEL_N2DSXL) ? 1 : 0;
+    }
+    cfguExit();
+}
+
+int is_new3ds(void) {
+    return g_is_new3ds;
+}
 
 void bring_to_front(int k) {
     int pos = -1;
