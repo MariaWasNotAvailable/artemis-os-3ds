@@ -103,6 +103,7 @@ static const char * const ICON_FILES[ICON_SZ] = {
     ".KOOOOOOOOOOOOK.",
     ".KKKKKKKKKKKKKK.",
     "................",
+    "................",
 };
 
 static const char * const ICON_ABOUT[ICON_SZ] = {
