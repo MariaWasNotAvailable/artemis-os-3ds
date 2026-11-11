@@ -8,6 +8,7 @@ const App *app_for_kind(WKind k) {
         case WK_FILES:   return &g_app_files;
         case WK_PAINT:   return &g_app_paint;
         case WK_MINES:   return &g_app_mines;
+        case WK_BASIC:   return &g_app_basic;
     }
     return NULL;
 }

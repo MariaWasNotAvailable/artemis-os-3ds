@@ -171,7 +171,7 @@ void draw_text_block(uint8_t *fb, int px, int py, int pw, int ph,
  * Window manager
  *-------------------------------------------------------------------*/
 Window g_wins[NUM_WINS];
-int    g_z[NUM_WINS] = {WK_ABOUT, WK_FILES, WK_CALC, WK_MINES, WK_PAINT, WK_NOTEPAD};
+int    g_z[NUM_WINS] = {WK_ABOUT, WK_FILES, WK_CALC, WK_MINES, WK_PAINT, WK_NOTEPAD, WK_BASIC};
 
 int g_uptime_ticks = 0;
 int g_is_new3ds = 0;
@@ -212,6 +212,7 @@ int topmost_open_input_window(void) {
         if (!w->open) continue;
         if (w->kind == WK_NOTEPAD) return g_z[i];
         if (w->kind == WK_PAINT && w->focus_filename) return g_z[i];
+        if (w->kind == WK_BASIC) return g_z[i];
     }
     return -1;
 }

@@ -42,7 +42,7 @@ typedef struct {
 
 static Key g_keys[48];
 static int g_nkeys = 0;
-static int g_shift = 0;
+static int g_shift = 1;
 static int g_pressed_key = -1;
 
 static char g_lbl_pool[64][4];
@@ -356,12 +356,13 @@ static const char *MENU_ITEMS[] = {
     "Minesweeper",
     "File Explorer",
     "About...",
+    "BASIC",
     "Shut Down",
 };
 #define MENU_COUNT ((int)(sizeof(MENU_ITEMS) / sizeof(MENU_ITEMS[0])))
 
 static const int MENU_KINDS[] = {
-    WK_NOTEPAD, WK_PAINT, WK_CALC, WK_MINES, WK_FILES, WK_ABOUT, -1
+    WK_NOTEPAD, WK_PAINT, WK_CALC, WK_MINES, WK_FILES, WK_ABOUT, WK_BASIC, -1
 };
 
 static void menu_rect(int *x, int *y, int *w, int *h) {
@@ -499,6 +500,7 @@ int main(void) {
     g_wins[WK_FILES].kind   = WK_FILES;
     g_wins[WK_PAINT].kind   = WK_PAINT;
     g_wins[WK_MINES].kind   = WK_MINES;
+    g_wins[WK_BASIC].kind   = WK_BASIC;
 
     build_keyboard();
 

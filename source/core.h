@@ -90,9 +90,10 @@ typedef enum {
     WK_ABOUT   = 2,
     WK_FILES   = 3,
     WK_PAINT   = 4,
-    WK_MINES   = 5
+    WK_MINES   = 5,
+    WK_BASIC   = 6
 } WKind;
-#define NUM_WINS 6
+#define NUM_WINS 7
 
 typedef struct Window Window;
 

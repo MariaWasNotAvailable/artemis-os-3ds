@@ -46,6 +46,7 @@ extern const App g_app_about;
 extern const App g_app_files;
 extern const App g_app_paint;
 extern const App g_app_mines;
+extern const App g_app_basic;
 
 const App *app_for_kind(WKind k);
 

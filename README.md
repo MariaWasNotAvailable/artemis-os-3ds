@@ -19,6 +19,18 @@ A tiny Windows 95-style desktop shell running as 3DS homebrew.
   - **Minesweeper** - 9x9 classic board
   - **File Explorer** - browses `sdmc:/3ds/artemis/`
   - **About**
+  - **BASIC** - GW-BASIC style interpreter with a Windows-95 terminal
+
+## New 3DS / New 2DS support
+
+Artemis detects the console model at startup via `cfgu` (`CFGU_GetSystemModel`) and exposes `is_new3ds()` (`source/core.c`). On New 3DS / New 2DS models (which have more RAM and a faster CPU) the following is enabled:
+
+- **About** - window shows "Model: New 3DS / New 2DS" instead of "Original 3DS / 2DS"
+- **Paint** - larger canvas (256x144 vs 192x128) and a wider window (300x200 vs 228x200)
+- **Notes** - bigger text buffer (4096 vs 2048 bytes)
+- **Audio** - higher SFX sample rate (48000 Hz vs 32000 Hz)
+
+Original 3DS / 2DS models keep the smaller defaults.
 
 ## Controls
 
@@ -32,6 +44,31 @@ A tiny Windows 95-style desktop shell running as 3DS homebrew.
 | D-pad / Circle pad | Nudge cursor |
 | START | Toggle Start menu |
 | SELECT | Quit |
+
+## BASIC
+
+Artemis includes a GW-BASIC style interpreter (`source/app_basic.c`). Launch **BASIC** from the desktop or Start menu.
+
+It is a line-numbered interpreter. Type a line starting with a number to store a program line, or a bare command to run it immediately.
+
+```
+10 PRINT "hello, world"
+20 FOR I = 1 TO 10
+30 PRINT I
+40 NEXT I
+RUN
+```
+
+### Statements
+`REM`, `LET`/assignment (`X = 5`, `A$ = "hi"`), `PRINT`, `INPUT "[prompt];" var`, `CLS`, `COLOR fg,bg`, `LOCATE row,col`, `IF expr THEN ...`, `GOTO line`, `GOSUB line` / `RETURN`, `FOR var = x TO y [STEP z]` / `NEXT var`, `END`, `STOP`.
+
+### Direct commands
+`RUN` - start the program · `LIST` - show program · `NEW` - clear program · `CLS` - clear screen · `BYE`/`EXIT` - hint to close the window.
+
+### Functions
+`RND`, `INT`, `ABS`, `SGN`, `SQR`, `LEN`, `STR$`, `VAL`, `ASC`, `CHR$`.
+
+Variables are `A`–`Z` (numeric) and `A$`–`Z$` (string). Programs live only while the window is open and are not saved to disk.
 
 ## Building
 
