@@ -402,7 +402,7 @@ void draw_desktop(uint8_t *fb) {
 
         int lw = (int)strlen(ic->name) * 8;
         int tx = ic->x + (ICON_SZ - lw) / 2;
-        int ty = ic->y + ICON_SZ + 2;
+        int ty = ic->y + ICON_SZ + 8;
         draw_text(fb, TOP_W, TOP_H, tx + 1, ty + 1, ic->name, C_BLACK);
         draw_text(fb, TOP_W, TOP_H, tx,     ty,     ic->name, C_TITLETXT);
     }
