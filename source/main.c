@@ -42,7 +42,8 @@ typedef struct {
 
 static Key g_keys[48];
 static int g_nkeys = 0;
-static int g_shift = 1;
+int g_shift = 0;
+int g_shift_auto = 0;
 static int g_pressed_key = -1;
 
 static char g_lbl_pool[64][4];
@@ -89,7 +90,11 @@ static void build_keyboard(void) {
     }
     add_key(8, 3, 2, K_RET, "Ret", 1);
 
-    add_key(0, 4, 10, K_SPACE, "Space", 1);
+    add_key(0, 4, 8, K_SPACE, "Space", 1);
+    g_lbl_pool[lb][0] = '.'; g_lbl_pool[lb][1] = '\0';
+    add_key(8, 4, 1, '.', g_lbl_pool[lb], 1); lb++;
+    g_lbl_pool[lb][0] = ','; g_lbl_pool[lb][1] = '\0';
+    add_key(9, 4, 1, ',', g_lbl_pool[lb], 1); lb++;
 }
 
 static int key_at(int tx, int ty) {
@@ -117,8 +122,14 @@ static void draw_keyboard(uint8_t *fb) {
             upper[0] = (char)(k->code - 'a' + 'A');
             lab = upper;
         } else if (g_shift && k->code >= '0' && k->code <= '9') {
-            static const char sym[] = "!@#$%?&*.,";
+            static const char sym[] = "!@#$%?&*()";
             upper[0] = sym[k->code - '0'];
+            lab = upper;
+        } else if (g_shift && k->code == '.') {
+            upper[0] = '\'';
+            lab = upper;
+        } else if (g_shift && k->code == ',') {
+            upper[0] = '"';
             lab = upper;
         }
         int lw = (int)strlen(lab) * 8;
@@ -163,8 +174,12 @@ static void kbd_press(int ki) {
             if (g_shift && c >= 'a' && c <= 'z') {
                 c = c - 'a' + 'A';
             } else if (g_shift && c >= '0' && c <= '9') {
-                static const char sym[] = "!@#$%?&*.,";
+                static const char sym[] = "!@#$%?&*()";
                 c = sym[c - '0'];
+            } else if (g_shift && c == '.') {
+                c = '\'';
+            } else if (g_shift && c == ',') {
+                c = '"';
             }
             break;
     }
@@ -467,7 +482,10 @@ static void do_click(int mx, int my) {
         if (!w->open) continue;
         int h = win_hit(w, mx, my);
         if (!h) continue;
-        if (h == 1) { w->open = 0; return; }
+        if (h == 1) {
+            if (k == WK_BASIC && g_shift_auto) { g_shift = 0; g_shift_auto = 0; }
+            w->open = 0; return;
+        }
         bring_to_front(k);
         if (h == 2) {
             g_drag_idx   = k;
@@ -536,7 +554,10 @@ int main(void) {
         if (kDown & KEY_START)  g_start_open = !g_start_open;
         if (kDown & KEY_B) {
             int top = topmost_open_any();
-            if (top >= 0) g_wins[top].open = 0;
+            if (top >= 0) {
+                if (g_wins[top].kind == WK_BASIC && g_shift_auto) { g_shift = 0; g_shift_auto = 0; }
+                g_wins[top].open = 0;
+            }
         }
 
         int dx = 0, dy = 0;

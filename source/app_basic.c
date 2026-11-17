@@ -968,6 +968,7 @@ static void basic_reset(Window *w) {
     bs->x0 = x0; bs->y0 = y0;
     basic_cls(bs);
     bring_to_front(WK_BASIC);
+    if (!g_shift) { g_shift = 1; g_shift_auto = 1; }
 }
 
 static void basic_draw(uint8_t *fb, Window *w, int focused) {

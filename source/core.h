@@ -115,6 +115,8 @@ struct Window {
 extern Window g_wins[NUM_WINS];
 extern int    g_z[NUM_WINS];
 extern int    g_uptime_ticks;
+extern int    g_shift;
+extern int    g_shift_auto;
 
 void bring_to_front(int k);
 int  topmost_open_any(void);
