@@ -107,35 +107,30 @@ void draw_text(uint8_t *fb, int fb_w, int fb_h, int x, int y,
 }
 
 static const char *CURSOR[] = {
-    "#..........",
-    "##.........",
-    "#W#........",
-    "#WW#.......",
-    "#WWW#......",
-    "#WWWW#.....",
-    "#WWWWW#....",
-    "#WWWWWW#...",
-    "#WWWWWWW#..",
-    "#WWWWWWWW#.",
-    "#WWWWW#####",
-    "#WW#WW#....",
-    "#W#.#WW#...",
-    "##..#WW#...",
-    "#....#WW#..",
-    ".....#WW#..",
-    "......#WW#.",
-    "......#WW#.",
-    ".......##..",
+    "#           ",
+    "##          ",
+    "#.#         ",
+    "#..#        ",
+    "#...#       ",
+    "#....#      ",
+    "#.....#     ",
+    "#......#    ",
+    "#.......#   ",
+    "#........#  ",
+    "#....######",
+    "#...#       ",
+    "#..#        ",
+    "###         ",
 };
 #define CURSOR_H ((int)(sizeof(CURSOR) / sizeof(CURSOR[0])))
-#define CURSOR_W 11
+#define CURSOR_W 12
 
 void draw_cursor(uint8_t *fb, int x, int y) {
     for (int j = 0; j < CURSOR_H; j++) {
         for (int i = 0; i < CURSOR_W; i++) {
             char c = CURSOR[j][i];
             if (c == '#')      put_px(fb, TOP_W, TOP_H, x + i, y + j, C_BLACK);
-            else if (c == 'W') put_px(fb, TOP_W, TOP_H, x + i, y + j, C_HI);
+            else if (c == '.') put_px(fb, TOP_W, TOP_H, x + i, y + j, C_HI);
         }
     }
 }

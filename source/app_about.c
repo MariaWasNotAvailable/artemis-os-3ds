@@ -21,19 +21,28 @@ static void about_reset(Window *w) {
     strcpy(w->title, "About Artemis OS");
     w->app_state = &g_about_state;
     AboutState *s = (AboutState *)w->app_state;
+    u8 batt_level = 0;
+    u8 batt_charging = 0;
+    PTMU_GetBatteryLevel(&batt_level);
+    PTMU_GetBatteryChargeState(&batt_charging);
+    int batt_pct = batt_level * 20;
+    const char *batt_suffix = batt_charging ? " (Charging)" : "";
+
     snprintf(s->text, sizeof(s->text),
         "Artemis OS 3DS\n"
-        "v1.4 build %s\n"
+        "v1.5 build %s\n"
         "\n"
         "A tiny Windows-like\n"
         "shell for the 3DS.\n"
         "\n"
         "Model: %s\n"
         "Audio: %s\n"
+        "Battery: %d%%%s\n"
         "Saves: sdmc:/3ds/artemis/",
         BUILD_NUMBER,
         is_new3ds() ? "New 3DS / New 2DS" : "Original 3DS / 2DS",
-        sfx_status());
+        sfx_status(),
+        batt_pct, batt_suffix);
     s->text_len = (int)strlen(s->text);
     if (s->text_len > (int)sizeof(s->text) - 1)
         s->text_len = (int)sizeof(s->text) - 1;
