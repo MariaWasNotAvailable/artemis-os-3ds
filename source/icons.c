@@ -201,6 +201,25 @@ static const char * const ICON_PHOTO[ICON_SZ] = {
     "................",
 };
 
+static const char * const ICON_PONG[ICON_SZ] = {
+    "................",
+    ".......KK.......",
+    ".......KK.......",
+    ".......KK.......",
+    "..K...W.W...K..",
+    "..K...W.Y.W...K..",
+    "..K...W.W...K..",
+    ".......KK.......",
+    ".......KK.......",
+    ".......KK.......",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+};
+
 const char * const *icon_for_kind(int kind) {
     switch (kind) {
         case WK_NOTEPAD: return ICON_NOTES;
@@ -211,6 +230,7 @@ const char * const *icon_for_kind(int kind) {
         case WK_MINES:   return ICON_MINES;
         case WK_BASIC:   return ICON_BASIC;
         case WK_PHOTO:   return ICON_PHOTO;
+        case WK_PONG:    return ICON_PONG;
     }
     return ICON_ABOUT;
 }
@@ -234,6 +254,17 @@ static const char * const ICON_PHOTO_S[ICON_SMALL_SZ] = {
     "KWGGYWK.",
     "KWWWWWK.",
     "KKKKKKK.",
+    "........",
+};
+
+static const char * const ICON_PONG_S[ICON_SMALL_SZ] = {
+    "........",
+    "..KKK...",
+    ".KW.YWK.",
+    ".KW.YWK.",
+    ".KW.YWK.",
+    ".KW.YWK.",
+    "..KKK...",
     "........",
 };
 static const char * const ICON_POWER[] = {
@@ -339,6 +370,7 @@ const char * const *icon_small_for_kind(int kind) {
         case WK_MINES:   return ICON_MINES_S;
         case WK_BASIC:   return ICON_BASIC_S;
         case WK_PHOTO:   return ICON_PHOTO_S;
+        case WK_PONG:    return ICON_PONG_S;
     }
     return ICON_ABOUT_S;
 }
@@ -423,6 +455,7 @@ const DesktopIcon g_icons[] = {
     { 56,  10, "Paint", WK_PAINT,   ICON_PAINT  },
     { 56,  58, "Basic", WK_BASIC,   ICON_BASIC  },
     { 56, 106, "Photo", WK_PHOTO,   ICON_PHOTO  },
+    { 100, 10, "Pong",  WK_PONG,    ICON_PONG   },
     { 56, 154, "Mines", WK_MINES,   ICON_MINES  },
 };
 int NUM_ICONS = (int)(sizeof(g_icons) / sizeof(g_icons[0]));

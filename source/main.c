@@ -371,6 +371,7 @@ static const char *MENU_ITEMS[] = {
     "BASIC",
     "File Explorer",
     "Photos",
+    "Pong",
     "About...",
     "Minesweeper",
     "Shut Down",
@@ -378,7 +379,7 @@ static const char *MENU_ITEMS[] = {
 #define MENU_COUNT ((int)(sizeof(MENU_ITEMS) / sizeof(MENU_ITEMS[0])))
 
 static const int MENU_KINDS[] = {
-    WK_NOTEPAD, WK_PAINT, WK_CALC, WK_BASIC, WK_FILES, WK_PHOTO, WK_ABOUT, WK_MINES, -1
+    WK_NOTEPAD, WK_PAINT, WK_CALC, WK_BASIC, WK_FILES, WK_PHOTO, WK_PONG, WK_ABOUT, WK_MINES, -1
 };
 
 static void menu_rect(int *x, int *y, int *w, int *h) {
@@ -521,6 +522,7 @@ int main(void) {
     g_wins[WK_MINES].kind   = WK_MINES;
     g_wins[WK_BASIC].kind   = WK_BASIC;
     g_wins[WK_PHOTO].kind   = WK_PHOTO;
+    g_wins[WK_PONG].kind    = WK_PONG;
 
     build_keyboard();
 

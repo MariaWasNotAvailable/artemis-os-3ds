@@ -16,8 +16,10 @@ A tiny Windows 95-style desktop shell running as 3DS homebrew.
   - **Notes** - text editor, saves to the SD card
   - **Paint** - 192x128 indexed-color canvas with pencil, brush, eraser, fill, and line tools. Draw with the stylus directly on the bottom screen in touch-draw mode.
   - **Calculator**
-  - **Minesweeper** - 9x9 classic board
   - **File Explorer** - browses `sdmc:/3ds/artemis/`
+  - **Photos** - browse 3DS camera photos (`sdmc:/DCIM/100NIN03` … `999NIN03`). Baseline JPEG decoding, aspect-fit display, Prev/Next navigation via buttons or D-pad, and a Back button to return to the file list.
+  - **Minesweeper** - 9x9 classic board
+  - **Pong** - two-player Pong on one device. Left paddle via the Left Circle Pad; right paddle by dragging on the bottom touch screen. First to 5 wins, ball speeds up on paddle hits.
   - **About**
   - **BASIC** - GW-BASIC style interpreter with a Windows-95 terminal
 
@@ -44,6 +46,14 @@ Original 3DS / 2DS models keep the smaller defaults.
 | D-pad / Circle pad | Nudge cursor |
 | START | Toggle Start menu |
 | SELECT | Quit |
+
+### Pong-specific controls
+
+| Input | Action |
+| --- | --- |
+| Left Circle Pad (up/down) | Move left paddle |
+| Stylus on bottom screen | Move right paddle |
+| Any key/button | Restart after game over |
 
 ## BASIC
 
@@ -90,6 +100,8 @@ Saves and bundled data live under `sdmc:/3ds/artemis/`:
 
 - `*.txt` - Notes documents
 - `*.apt` - Paint images (custom 4bpp format)
+
+Photos are read from the 3DS camera folders under `sdmc:/DCIM/` (`100NIN03` … `999NIN03`); nothing is written there.
 
 ## License
 

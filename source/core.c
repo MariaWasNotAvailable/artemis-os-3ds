@@ -171,7 +171,7 @@ void draw_text_block(uint8_t *fb, int px, int py, int pw, int ph,
  * Window manager
  *-------------------------------------------------------------------*/
 Window g_wins[NUM_WINS];
-int    g_z[NUM_WINS] = {WK_ABOUT, WK_FILES, WK_CALC, WK_MINES, WK_PAINT, WK_NOTEPAD, WK_BASIC, WK_PHOTO};
+int    g_z[NUM_WINS] = {WK_ABOUT, WK_FILES, WK_CALC, WK_MINES, WK_PAINT, WK_NOTEPAD, WK_BASIC, WK_PHOTO, WK_PONG};
 
 int g_uptime_ticks = 0;
 int g_is_new3ds = 0;
