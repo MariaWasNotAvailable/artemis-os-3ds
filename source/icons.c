@@ -182,6 +182,25 @@ static const char * const ICON_BASIC[ICON_SZ] = {
     "................",
 };
 
+static const char * const ICON_PHOTO[ICON_SZ] = {
+    "................",
+    "..KKKKKKKKKKK...",
+    ".KWWWWWWWWWWWK..",
+    ".KWGGGGGGGGGWWK.",
+    ".KWGGYYGGYGGWK..",
+    ".KWGGYYGGYGGWK..",
+    ".KWGGGGGGGGGWWK.",
+    ".KWWWWWWWWWWWK..",
+    ".KWBBBWWWBBBWWK.",
+    ".KWBBBWWWBBBWWK.",
+    ".KWWWWWWWWWWWK..",
+    ".KWWWWWWWWWWWK..",
+    ".KKKKKKKKKKKKK..",
+    "................",
+    "................",
+    "................",
+};
+
 const char * const *icon_for_kind(int kind) {
     switch (kind) {
         case WK_NOTEPAD: return ICON_NOTES;
@@ -191,6 +210,7 @@ const char * const *icon_for_kind(int kind) {
         case WK_PAINT:   return ICON_PAINT;
         case WK_MINES:   return ICON_MINES;
         case WK_BASIC:   return ICON_BASIC;
+        case WK_PHOTO:   return ICON_PHOTO;
     }
     return ICON_ABOUT;
 }
@@ -203,6 +223,17 @@ static const char * const ICON_BASIC_S[ICON_SMALL_SZ] = {
     "KWKWWWKK",
     ".KWKWK..",
     "..KKK...",
+    "........",
+};
+
+static const char * const ICON_PHOTO_S[ICON_SMALL_SZ] = {
+    "KKKKKKK.",
+    "KWWWWWK.",
+    "KWGGYWK.",
+    "KWGYGWK.",
+    "KWGGYWK.",
+    "KWWWWWK.",
+    "KKKKKKK.",
     "........",
 };
 static const char * const ICON_POWER[] = {
@@ -307,6 +338,7 @@ const char * const *icon_small_for_kind(int kind) {
         case WK_PAINT:   return ICON_PAINT_S;
         case WK_MINES:   return ICON_MINES_S;
         case WK_BASIC:   return ICON_BASIC_S;
+        case WK_PHOTO:   return ICON_PHOTO_S;
     }
     return ICON_ABOUT_S;
 }
@@ -389,8 +421,9 @@ const DesktopIcon g_icons[] = {
     { 12, 106, "Files", WK_FILES,   ICON_FILES  },
     { 12, 154, "About", WK_ABOUT,   ICON_ABOUT  },
     { 56,  10, "Paint", WK_PAINT,   ICON_PAINT  },
-    { 56,  58, "Mines", WK_MINES,   ICON_MINES  },
-    { 56, 106, "Basic", WK_BASIC,   ICON_BASIC  },
+    { 56,  58, "Basic", WK_BASIC,   ICON_BASIC  },
+    { 56, 106, "Photo", WK_PHOTO,   ICON_PHOTO  },
+    { 56, 154, "Mines", WK_MINES,   ICON_MINES  },
 };
 int NUM_ICONS = (int)(sizeof(g_icons) / sizeof(g_icons[0]));
 
