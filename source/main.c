@@ -362,13 +362,14 @@ static int task_button_hit(int mx, int my) {
 }
 
 #define MENU_W      150
-#define MENU_ITEM_H 20
+#define MENU_ITEM_H 19
 
 static const char *MENU_ITEMS[] = {
     "Notes",
     "Paint",
     "Calculator",
     "BASIC",
+    "Guess Game",
     "File Explorer",
     "Photos",
     "Pong",
@@ -379,7 +380,7 @@ static const char *MENU_ITEMS[] = {
 #define MENU_COUNT ((int)(sizeof(MENU_ITEMS) / sizeof(MENU_ITEMS[0])))
 
 static const int MENU_KINDS[] = {
-    WK_NOTEPAD, WK_PAINT, WK_CALC, WK_BASIC, WK_FILES, WK_PHOTO, WK_PONG, WK_ABOUT, WK_MINES, -1
+    WK_NOTEPAD, WK_PAINT, WK_CALC, WK_BASIC, WK_GUESS, WK_FILES, WK_PHOTO, WK_PONG, WK_ABOUT, WK_MINES, -1
 };
 
 static void menu_rect(int *x, int *y, int *w, int *h) {
@@ -523,6 +524,7 @@ int main(void) {
     g_wins[WK_BASIC].kind   = WK_BASIC;
     g_wins[WK_PHOTO].kind   = WK_PHOTO;
     g_wins[WK_PONG].kind    = WK_PONG;
+    g_wins[WK_GUESS].kind   = WK_GUESS;
 
     build_keyboard();
 

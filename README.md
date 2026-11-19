@@ -20,6 +20,7 @@ A tiny Windows 95-style desktop shell running as 3DS homebrew.
   - **Photos** - browse 3DS camera photos (`sdmc:/DCIM/100NIN03` … `999NIN03`). Baseline JPEG decoding, aspect-fit display, Prev/Next navigation via buttons or D-pad, and a Back button to return to the file list.
   - **Minesweeper** - 9x9 classic board
   - **Pong** - two-player Pong on one device. Left paddle via the Left Circle Pad; right paddle by dragging on the bottom touch screen. First to 5 wins, ball speeds up on paddle hits.
+  - **Guess the Number** - standalone number-guessing game in a terminal
   - **About**
   - **BASIC** - GW-BASIC style interpreter with a Windows-95 terminal
 
@@ -79,6 +80,10 @@ RUN
 `RND`, `INT`, `ABS`, `SGN`, `SQR`, `LEN`, `STR$`, `VAL`, `ASC`, `CHR$`.
 
 Variables are `A`–`Z` (numeric) and `A$`–`Z$` (string). Programs live only while the window is open and are not saved to disk.
+
+## Guess the Number
+
+Launch **Guess the Number** from its desktop icon or the Start menu. Choose a highest possible number and 1 to 10 attempts; press Enter at either setup prompt to use its default. Then enter whole-number guesses in the terminal. Guesses outside the chosen range or non-numeric entries are rejected without using an attempt. Press Enter after the result to play again.
 
 ## Building
 

@@ -1,6 +1,7 @@
 #include "app.h"
 #include "icons.h"
 #include "audio.h"
+#include "terminal.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -26,9 +27,6 @@
 #define BASIC_MAX_LINES   512
 #define BASIC_MAX_LINELEN  256
 #define BASIC_NUM_VARS     26   /* A-Z */
-#define BASIC_MAX_COLS     64
-#define BASIC_MAX_ROWS     34
-
 #define BASIC_CALL_STACK   64
 #define BASIC_FOR_STACK    16
 
@@ -96,13 +94,7 @@ typedef struct {
     double num_vars[BASIC_NUM_VARS];
     char  *str_vars[BASIC_NUM_VARS];
 
-    /* screen grid */
-    int   cols, rows;
-    int   x0, y0;              /* draw origin of grid */
-    char  ch[BASIC_MAX_ROWS][BASIC_MAX_COLS];
-    uint8_t fg[BASIC_MAX_ROWS][BASIC_MAX_COLS];
-    int   cur_x, cur_y;
-    int   cur_fg, cur_bg;
+    Terminal terminal;
 
     /* direct-mode input line */
     char  inbuf[BASIC_MAX_LINELEN];
@@ -146,46 +138,18 @@ static int var_index(char c) {
 }
 
 static void basic_cls(BasicState *bs) {
-    for (int y = 0; y < bs->rows; y++) {
-        for (int x = 0; x < bs->cols; x++) {
-            bs->ch[y][x] = ' ';
-            bs->fg[y][x] = (uint8_t)bs->cur_fg;
-        }
-    }
-    bs->cur_x = 0; bs->cur_y = 0;
+    terminal_clear(&bs->terminal);
     bs->dirty = 1;
 }
 
-static void basic_scroll(BasicState *bs) {
-    for (int y = 1; y < bs->rows; y++) {
-        memcpy(bs->ch[y-1], bs->ch[y], bs->cols);
-        memcpy(bs->fg[y-1], bs->fg[y], bs->cols);
-    }
-    for (int x = 0; x < bs->cols; x++) {
-        bs->ch[bs->rows-1][x] = ' ';
-        bs->fg[bs->rows-1][x] = (uint8_t)bs->cur_fg;
-    }
-}
-
 static void basic_putc(BasicState *bs, char c) {
-    if (c == '\n') { bs->cur_x = 0; bs->cur_y++; }
-    else if (c == '\r') { bs->cur_x = 0; }
-    else if (c == '\b') {
-        if (bs->cur_x > 0) { bs->cur_x--; bs->ch[bs->cur_y][bs->cur_x] = ' '; }
-        else if (bs->cur_y > 0) { bs->cur_y--; bs->cur_x = bs->cols - 1; bs->ch[bs->cur_y][bs->cur_x] = ' '; }
-    } else {
-        if (bs->cur_x >= bs->cols) { bs->cur_x = 0; bs->cur_y++; }
-        if (bs->cur_y >= bs->rows) { basic_scroll(bs); bs->cur_y = bs->rows - 1; }
-        bs->ch[bs->cur_y][bs->cur_x] = c;
-        bs->fg[bs->cur_y][bs->cur_x] = (uint8_t)bs->cur_fg;
-        bs->cur_x++;
-    }
-    if (bs->cur_y >= bs->rows) { basic_scroll(bs); bs->cur_y = bs->rows - 1; }
+    terminal_putc(&bs->terminal, c);
     bs->dirty = 1;
 }
 
 static void basic_print_str(BasicState *bs, const char *s) {
-    while (*s) basic_putc(bs, *s++);
+    terminal_print(&bs->terminal, s);
+    bs->dirty = 1;
 }
 
 /*---------------------------------------------------------------------
@@ -584,8 +548,11 @@ static void stmt_print(Stmt *s) {
     while (*p) {
         p = skip_spaces(p);
         if (!*p) break;
-        if (*p == ',') { p++; bs->cur_x = (bs->cur_x / 14 + 1) * 14;
-            if (bs->cur_x >= bs->cols) { bs->cur_x = 0; bs->cur_y++; }
+        if (*p == ',') { p++; bs->terminal.cur_x = (bs->terminal.cur_x / 14 + 1) * 14;
+            if (bs->terminal.cur_x >= bs->terminal.cols) {
+                bs->terminal.cur_x = 0;
+                bs->terminal.cur_y++;
+            }
             continue; }
         if (*p == ';') { p++; cr = 0; continue; }
         if (*p == '"') {
@@ -826,19 +793,19 @@ static void stmt_exec_simple(Stmt *s) {
             Val v2 = basic_eval(bs, &pp); s->p = pp;
             col = (int)val_get_num(&v2); val_free(&v2);
         }
-        if (row >= 1 && row <= bs->rows) bs->cur_y = row - 1;
-        if (col >= 1 && col <= bs->cols) bs->cur_x = col - 1;
+        if (row >= 1 && row <= bs->terminal.rows) bs->terminal.cur_y = row - 1;
+        if (col >= 1 && col <= bs->terminal.cols) bs->terminal.cur_x = col - 1;
         return;
     }
     if (p[0] == 'C' && p[1] == 'O' && p[2] == 'L' && p[3] == 'O' && p[4] == 'R') {
         s->p += 5; s->p = skip_spaces(s->p);
         const char *pp = s->p;
         Val v = basic_eval(bs, &pp); s->p = pp;
-        bs->cur_fg = (int)val_get_num(&v) & 15; val_free(&v);
+        bs->terminal.cur_fg = (int)val_get_num(&v) & 15; val_free(&v);
         s->p = skip_spaces(s->p);
         if (*s->p == ',') { s->p++; s->p = skip_spaces(s->p);
             Val v2 = basic_eval(bs, &pp); s->p = pp;
-            bs->cur_bg = (int)val_get_num(&v2) & 15; val_free(&v2);
+            bs->terminal.cur_bg = (int)val_get_num(&v2) & 15; val_free(&v2);
         }
         return;
     }
@@ -943,29 +910,11 @@ static void process_direct_line(BasicState *bs, Window *w) {
  * app callbacks
  *-------------------------------------------------------------------*/
 static void basic_reset(Window *w) {
-    w->kind = WK_BASIC;
-    w->open = 1;
-    w->x = 8; w->y = 8;
-    w->w = 384; w->h = 200;
-    strcpy(w->title, "BASIC");
-    w->app_state = &g_basic_state;
+    terminal_window_init(w, WK_BASIC, "BASIC", &g_basic_state);
     BasicState *bs = &g_basic_state;
     memset(bs, 0, sizeof(*bs));
-    bs->cur_fg = 15;
-    bs->cur_bg = 0;
+    terminal_init(&bs->terminal, w);
     srand((unsigned)time(NULL));
-
-    int x0 = w->x + 5;
-    int y0 = w->y + 24;
-    int cw = w->w - 10;
-    int ch = w->h - 34;
-    bs->cols = cw / 8;
-    if (bs->cols > BASIC_MAX_COLS) bs->cols = BASIC_MAX_COLS;
-    if (bs->cols < 1) bs->cols = 1;
-    bs->rows = (ch - 20) / 10;
-    if (bs->rows > BASIC_MAX_ROWS) bs->rows = BASIC_MAX_ROWS;
-    if (bs->rows < 1) bs->rows = 1;
-    bs->x0 = x0; bs->y0 = y0;
     basic_cls(bs);
     bring_to_front(WK_BASIC);
     if (!g_shift) { g_shift = 1; g_shift_auto = 1; }
@@ -974,38 +923,9 @@ static void basic_reset(Window *w) {
 static void basic_draw(uint8_t *fb, Window *w, int focused) {
     (void)focused;
     BasicState *bs = (BasicState *)w->app_state;
-    if (!bs->cols || !bs->rows) return;
-
-    int x0 = w->x + 5;
-    int y0 = w->y + 24;
-    int cw = w->w - 10;
-    int ch = w->h - 34;
-    fill_rect(fb, TOP_W, TOP_H, x0, y0, cw, ch, BASIC_PAL[bs->cur_bg & 15]);
-
-    for (int y = 0; y < bs->rows; y++) {
-        int ty = y0 + y * 10;
-        for (int x = 0; x < bs->cols; x++) {
-            char c = bs->ch[y][x];
-            if (c == ' ') continue;
-            int tx = x0 + x * 8;
-            draw_char(fb, TOP_W, TOP_H, tx, ty, c, BASIC_PAL[bs->fg[y][x] & 15]);
-        }
-    }
-
-    int show_caret = (!bs->running && caret_tick() < 30);
-    if (show_caret) {
-        int cx = x0 + bs->cur_x * 8;
-        int cy = y0 + bs->cur_y * 10;
-        vline(fb, TOP_W, TOP_H, cx, cy, 8, BASIC_PAL[15]);
-    }
-
-    if (w->status_ttl > 0 && w->status[0]) {
-        int iy = y0 + bs->rows * 10 + 2;
-        if (iy + 8 <= y0 + ch) {
-            draw_text(fb, TOP_W, TOP_H, x0, iy, w->status, BASIC_PAL[15]);
-        }
-    }
-
+    terminal_draw(fb, w, &bs->terminal, BASIC_PAL, BASIC_PAL[15], BASIC_PAL[0],
+                  !bs->running,
+                  w->status_ttl > 0 ? w->status : NULL);
     bs->dirty = 0;
 }
 
@@ -1026,15 +946,9 @@ static void basic_input(Window *w, char c) {
             }
             bs->waiting_input = 0;
             basic_putc(bs, '\n');
-        } else if (c == '\b') {
-            if (bs->inlen > 0) {
-                bs->inlen--;
-                bs->inbuf[bs->inlen] = '\0';
-                basic_putc(bs, '\b');
-            }
-        } else if (bs->inlen < BASIC_MAX_LINELEN - 1 && c >= 32) {
-            bs->inbuf[bs->inlen++] = c; bs->inbuf[bs->inlen] = '\0';
-            basic_putc(bs, c);
+        } else {
+            terminal_edit_input(&bs->terminal, bs->inbuf, &bs->inlen,
+                                sizeof(bs->inbuf), c);
         }
         bs->dirty = 1;
         return;
@@ -1046,15 +960,9 @@ static void basic_input(Window *w, char c) {
         basic_putc(bs, '\n');
         basic_print_str(bs, "Ok");
         basic_putc(bs, '\n');
-    } else if (c == '\b') {
-        if (bs->inlen > 0) {
-            bs->inlen--;
-            bs->inbuf[bs->inlen] = '\0';
-            basic_putc(bs, '\b');
-        }
-    } else if (bs->inlen < BASIC_MAX_LINELEN - 1 && c >= 32) {
-        bs->inbuf[bs->inlen++] = c; bs->inbuf[bs->inlen] = '\0';
-        basic_putc(bs, c);
+    } else {
+        terminal_edit_input(&bs->terminal, bs->inbuf, &bs->inlen,
+                            sizeof(bs->inbuf), c);
     }
     bs->dirty = 1;
 }

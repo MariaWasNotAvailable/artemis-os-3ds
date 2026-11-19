@@ -11,6 +11,7 @@ const App *app_for_kind(WKind k) {
         case WK_BASIC:   return &g_app_basic;
         case WK_PHOTO:   return &g_app_photo;
         case WK_PONG:    return &g_app_pong;
+        case WK_GUESS:   return &g_app_guess;
     }
     return NULL;
 }
