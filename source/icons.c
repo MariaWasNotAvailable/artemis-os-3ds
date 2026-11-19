@@ -239,6 +239,44 @@ static const char * const ICON_GUESS[ICON_SZ] = {
     "................",
 };
 
+static const char * const ICON_RPS[ICON_SZ] = {
+    "................",
+    "...KKKKKKKKKK...",
+    "..KBBBBBBBBBBK..",
+    ".KBBBBBBBBBBBBK.",
+    ".KBBRR..YY.GBBK.",
+    ".KBBRR..YY.GBBK.",
+    ".KBBRR..YY.GBBK.",
+    ".KBBBB..YY.GBBK.",
+    ".KBBBB..YY.GBBK.",
+    ".KBBBB..YY.GBBK.",
+    ".KBBBB..YY.GBBK.",
+    ".KBBBBBBBBBBBBK.",
+    "..KBBBBBBBBBBK..",
+    "...KKKKKKKKKK...",
+    "................",
+    "................",
+};
+
+static const char * const ICON_HANGMAN[ICON_SZ] = {
+    "................",
+    "...KKKKKKKKKK...",
+    "..KBBBBBBBBBBK..",
+    ".KBBKYYYYKBBBBK.",
+    ".KBBK...KBBBBBK.",
+    ".KBBK...KBBBBBK.",
+    ".KBBK..YKYBBBBK.",
+    ".KBBK...YBBBBBK.",
+    ".KBBK..Y.YBBBBK.",
+    ".KBBK...KBBBBBK.",
+    ".KBBK..K.KBBBBK.",
+    ".KBBKKKKKKBBBBK.",
+    "..KBBBBBBBBBBK..",
+    "...KKKKKKKKKK...",
+    "................",
+    "................",
+};
+
 const char * const *icon_for_kind(int kind) {
     switch (kind) {
         case WK_NOTEPAD: return ICON_NOTES;
@@ -251,6 +289,8 @@ const char * const *icon_for_kind(int kind) {
         case WK_PHOTO:   return ICON_PHOTO;
         case WK_PONG:    return ICON_PONG;
         case WK_GUESS:   return ICON_GUESS;
+        case WK_RPS:     return ICON_RPS;
+        case WK_HANGMAN: return ICON_HANGMAN;
     }
     return ICON_ABOUT;
 }
@@ -298,6 +338,29 @@ static const char * const ICON_GUESS_S[ICON_SMALL_SZ] = {
     "..KWWK..",
     "...KK...",
 };
+
+static const char * const ICON_RPS_S[ICON_SMALL_SZ] = {
+    ".KKKKKK.",
+    "KBBBBBBK",
+    "KRR.YY.K",
+    "KRR.YY.K",
+    "KBB.YY.K",
+    "KBB.YY.K",
+    "KBBBBBBK",
+    ".KKKKKK.",
+};
+
+static const char * const ICON_HANGMAN_S[ICON_SMALL_SZ] = {
+    "..KKKK..",
+    "..K..K..",
+    "..K.YK..",
+    "..K.YK..",
+    "..K.YK..",
+    "..K.YK..",
+    "..KKKK..",
+    "........",
+};
+
 static const char * const ICON_POWER[] = {
     "................",
     ".......KK.......",
@@ -403,6 +466,8 @@ const char * const *icon_small_for_kind(int kind) {
         case WK_PHOTO:   return ICON_PHOTO_S;
         case WK_PONG:    return ICON_PONG_S;
         case WK_GUESS:   return ICON_GUESS_S;
+        case WK_RPS:     return ICON_RPS_S;
+        case WK_HANGMAN: return ICON_HANGMAN_S;
     }
     return ICON_ABOUT_S;
 }
@@ -489,6 +554,8 @@ const DesktopIcon g_icons[] = {
     { 56, 106, "Photo", WK_PHOTO,   ICON_PHOTO  },
     { 100, 10, "Pong",  WK_PONG,    ICON_PONG   },
     { 100, 58, "Guess", WK_GUESS,   ICON_GUESS  },
+    { 100, 106, "RPS",  WK_RPS,     ICON_RPS    },
+    { 100, 154, "Hang", WK_HANGMAN, ICON_HANGMAN },
     { 56, 154, "Mines", WK_MINES,   ICON_MINES  },
 };
 int NUM_ICONS = (int)(sizeof(g_icons) / sizeof(g_icons[0]));

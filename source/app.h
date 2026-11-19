@@ -51,6 +51,8 @@ extern const App g_app_photo;
 extern const App g_app_pong;
 extern const App g_app_pong;
 extern const App g_app_guess;
+extern const App g_app_rps;
+extern const App g_app_hangman;
 
 const App *app_for_kind(WKind k);
 

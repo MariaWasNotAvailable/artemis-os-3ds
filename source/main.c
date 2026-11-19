@@ -388,13 +388,16 @@ static const char *GAME_MENU_ITEMS[] = {
     "Minesweeper",
     "Pong",
     "Guess Game",
+    "Rock Paper Scissors",
+    "Hangman",
 };
 
 static const int GAME_MENU_KINDS[] = {
-    WK_MINES, WK_PONG, WK_GUESS,
+    WK_MINES, WK_PONG, WK_GUESS, WK_RPS, WK_HANGMAN,
 };
 
 #define GAME_MENU_COUNT ((int)(sizeof(GAME_MENU_ITEMS) / sizeof(GAME_MENU_ITEMS[0])))
+#define GAME_MENU_W 190
 
 static void menu_rect(int *x, int *y, int *w, int *h) {
     *w = MENU_W;
@@ -407,7 +410,7 @@ static void games_menu_rect(int *x, int *y, int *w, int *h) {
     int menu_x, menu_y, menu_w, menu_h;
     menu_rect(&menu_x, &menu_y, &menu_w, &menu_h);
     *x = menu_x + menu_w - 1;
-    *w = MENU_W;
+    *w = GAME_MENU_W;
     *h = GAME_MENU_COUNT * MENU_ITEM_H + 6;
 
     int games_y = menu_y + 3 + MENU_GAMES_INDEX * MENU_ITEM_H;
@@ -605,6 +608,8 @@ int main(void) {
     g_wins[WK_PHOTO].kind   = WK_PHOTO;
     g_wins[WK_PONG].kind    = WK_PONG;
     g_wins[WK_GUESS].kind   = WK_GUESS;
+    g_wins[WK_RPS].kind     = WK_RPS;
+    g_wins[WK_HANGMAN].kind = WK_HANGMAN;
 
     build_keyboard();
 
