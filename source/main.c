@@ -221,6 +221,7 @@ static void draw_window(uint8_t *fb, Window *w, int is_focused) {
  * Taskbar / Start menu
  *-------------------------------------------------------------------*/
 static int g_start_open = 0;
+static int g_games_open = 0;
 
 typedef struct { int x, y, w, h; } Rect;
 static Rect g_task_rects[NUM_WINS];
@@ -362,32 +363,58 @@ static int task_button_hit(int mx, int my) {
 }
 
 #define MENU_W      150
-#define MENU_ITEM_H 19
+#define MENU_ITEM_H 20
+#define MENU_GAMES  -2
+#define MENU_GAMES_INDEX 4
 
 static const char *MENU_ITEMS[] = {
     "Notes",
     "Paint",
     "Calculator",
     "BASIC",
-    "Guess Game",
+    "Games",
     "File Explorer",
     "Photos",
-    "Pong",
     "About...",
-    "Minesweeper",
     "Shut Down",
 };
 #define MENU_COUNT ((int)(sizeof(MENU_ITEMS) / sizeof(MENU_ITEMS[0])))
 
 static const int MENU_KINDS[] = {
-    WK_NOTEPAD, WK_PAINT, WK_CALC, WK_BASIC, WK_GUESS, WK_FILES, WK_PHOTO, WK_PONG, WK_ABOUT, WK_MINES, -1
+    WK_NOTEPAD, WK_PAINT, WK_CALC, WK_BASIC, MENU_GAMES, WK_FILES, WK_PHOTO, WK_ABOUT, -1
 };
+
+static const char *GAME_MENU_ITEMS[] = {
+    "Minesweeper",
+    "Pong",
+    "Guess Game",
+};
+
+static const int GAME_MENU_KINDS[] = {
+    WK_MINES, WK_PONG, WK_GUESS,
+};
+
+#define GAME_MENU_COUNT ((int)(sizeof(GAME_MENU_ITEMS) / sizeof(GAME_MENU_ITEMS[0])))
 
 static void menu_rect(int *x, int *y, int *w, int *h) {
     *w = MENU_W;
     *h = MENU_COUNT * MENU_ITEM_H + 6;
     *x = 2;
     *y = TOP_H - TASKBAR_H - *h;
+}
+
+static void games_menu_rect(int *x, int *y, int *w, int *h) {
+    int menu_x, menu_y, menu_w, menu_h;
+    menu_rect(&menu_x, &menu_y, &menu_w, &menu_h);
+    *x = menu_x + menu_w - 1;
+    *w = MENU_W;
+    *h = GAME_MENU_COUNT * MENU_ITEM_H + 6;
+
+    int games_y = menu_y + 3 + MENU_GAMES_INDEX * MENU_ITEM_H;
+    int bottom = TOP_H - TASKBAR_H;
+    *y = games_y;
+    if (*y + *h > bottom) *y = bottom - *h;
+    if (*y < 0) *y = 0;
 }
 
 static int menu_item_at(int mx, int my) {
@@ -398,6 +425,18 @@ static int menu_item_at(int mx, int my) {
     if (rel < 0) return -1;
     int idx = rel / MENU_ITEM_H;
     if (idx < 0 || idx >= MENU_COUNT) return -1;
+    return idx;
+}
+
+static int games_menu_item_at(int mx, int my) {
+    if (!g_games_open) return -1;
+    int x, y, w, h;
+    games_menu_rect(&x, &y, &w, &h);
+    if (mx < x || mx >= x + w || my < y || my >= y + h) return -1;
+    int rel = my - (y + 3);
+    if (rel < 0) return -1;
+    int idx = rel / MENU_ITEM_H;
+    if (idx < 0 || idx >= GAME_MENU_COUNT) return -1;
     return idx;
 }
 
@@ -425,18 +464,42 @@ static void draw_start_menu(uint8_t *fb, int cursor_x, int cursor_y) {
     int hover = menu_item_at(cursor_x, cursor_y);
     for (int i = 0; i < MENU_COUNT; i++) {
         int iy = y + 3 + i * MENU_ITEM_H;
+        int is_games = MENU_KINDS[i] == MENU_GAMES;
         Color txt = C_TEXT;
-        if (i == hover) {
+        if (i == hover || (is_games && g_games_open)) {
             fill_rect(fb, TOP_W, TOP_H, x + 18, iy, w - 22, MENU_ITEM_H, C_MENU_HI);
             txt = C_TITLETXT;
         }
-        const char * const *ic = (MENU_KINDS[i] == -1)
+        const char * const *ic = MENU_KINDS[i] == -1
                                    ? icon_for_shutdown()
-                                   : icon_for_kind(MENU_KINDS[i]);
+                                   : icon_for_kind(is_games ? WK_MINES : MENU_KINDS[i]);
         int icon_y = iy + (MENU_ITEM_H - ICON_SZ) / 2;
         draw_icon(fb, TOP_W, TOP_H, x + 20, icon_y, ic);
         draw_text(fb, TOP_W, TOP_H, x + 42, iy + (MENU_ITEM_H - 8) / 2,
                   MENU_ITEMS[i], txt);
+        if (is_games)
+            draw_text(fb, TOP_W, TOP_H, x + w - 16, iy + (MENU_ITEM_H - 8) / 2, ">", txt);
+    }
+
+    if (g_games_open) {
+        int gx, gy, gw, gh;
+        games_menu_rect(&gx, &gy, &gw, &gh);
+        fill_rect(fb, TOP_W, TOP_H, gx, gy, gw, gh, C_MENU);
+        bevel(fb, TOP_W, TOP_H, gx, gy, gw, gh, 1);
+        int game_hover = games_menu_item_at(cursor_x, cursor_y);
+        for (int i = 0; i < GAME_MENU_COUNT; i++) {
+            int iy = gy + 3 + i * MENU_ITEM_H;
+            Color txt = C_TEXT;
+            if (i == game_hover) {
+                fill_rect(fb, TOP_W, TOP_H, gx + 2, iy, gw - 4, MENU_ITEM_H, C_MENU_HI);
+                txt = C_TITLETXT;
+            }
+            draw_icon(fb, TOP_W, TOP_H, gx + 4,
+                      iy + (MENU_ITEM_H - ICON_SZ) / 2,
+                      icon_for_kind(GAME_MENU_KINDS[i]));
+            draw_text(fb, TOP_W, TOP_H, gx + 26, iy + (MENU_ITEM_H - 8) / 2,
+                      GAME_MENU_ITEMS[i], txt);
+        }
     }
 }
 
@@ -454,10 +517,22 @@ static void do_click(int mx, int my) {
     if (g_drag_idx >= 0) { g_drag_idx = -1; return; }
 
     if (g_start_open) {
+        int game_idx = games_menu_item_at(mx, my);
+        if (game_idx >= 0) {
+            g_start_open = 0;
+            g_games_open = 0;
+            open_app((WKind)GAME_MENU_KINDS[game_idx]);
+            return;
+        }
         int idx = menu_item_at(mx, my);
         if (idx >= 0) {
-            g_start_open = 0;
             int kind = MENU_KINDS[idx];
+            if (kind == MENU_GAMES) {
+                g_games_open = !g_games_open;
+                return;
+            }
+            g_start_open = 0;
+            g_games_open = 0;
             if (kind == -1) {
                 sfx_play(SFX_SHUTDOWN);
                 svcSleepThread(700 * 1000 * 1000LL);
@@ -468,9 +543,14 @@ static void do_click(int mx, int my) {
             return;
         }
         g_start_open = 0;
+        g_games_open = 0;
     }
 
-    if (start_button_hit(mx, my)) { g_start_open = !g_start_open; return; }
+    if (start_button_hit(mx, my)) {
+        g_start_open = !g_start_open;
+        g_games_open = 0;
+        return;
+    }
 
     int tb = task_button_hit(mx, my);
     if (tb >= 0) {
@@ -557,7 +637,10 @@ int main(void) {
         uint32_t kHeld = hidKeysHeld();
 
         if (kDown & KEY_SELECT) break;
-        if (kDown & KEY_START)  g_start_open = !g_start_open;
+        if (kDown & KEY_START) {
+            g_start_open = !g_start_open;
+            g_games_open = 0;
+        }
         if (kDown & KEY_B) {
             int top = topmost_open_any();
             if (top >= 0) {
